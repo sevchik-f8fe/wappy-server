@@ -28,7 +28,7 @@ export const findByEmail = async (email) => {
   )
     .then(res => res.data.docs)
 
-  console.log('finded: ', user)
+  // console.log('finded: ', user)
   return user;
 };
 
@@ -54,7 +54,7 @@ export const updateUser = async (user_id, user_rev, updatedDoc) => {
   )
     .then((res) => res.data);
 
-  console.log('ok update: ', response)
+  // console.log('ok update: ', response)
 }
 
 export const deleteUser = async (user_id, user_rev) => {

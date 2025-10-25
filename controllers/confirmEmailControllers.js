@@ -91,16 +91,16 @@ export const sendMail = async (req, res) => {
     const { email, path, newEmail } = req.body;
 
     const code = generateCode();
+    const mailForSend = path == 'emailChange' ? newEmail : email;
 
     const mailObj = {
       from: "kononovseva06@yandex.ru",
-      to: (path === 'changeEmail') ? newEmail : email,
+      to: mailForSend,
       auth_code: {
         code,
       },
     };
 
-    console.log('start find for send')
     const user = await findByEmail(email);
     const exUser = await findByEmail(newEmail);
 
@@ -136,7 +136,6 @@ export const sendMail = async (req, res) => {
         });
       }
     }
-
     await sendEmail(mailObj)
       .catch((error) => console.error("err send:", error));
 
@@ -146,7 +145,6 @@ export const sendMail = async (req, res) => {
       id: user[0]._id
     };
 
-    console.log('user send: ', user[0]);
     console.log('user safe send: ', safeUser);
 
     res.status(200).json({ user: safeUser });

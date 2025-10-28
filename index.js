@@ -5,7 +5,7 @@ import cors from "cors";
 import helmet from "helmet";
 import hpp from "hpp";
 import { rateLimit } from 'express-rate-limit'
-//oauth body_parser path
+
 import * as dotenv from 'dotenv';
 
 dotenv.config();
@@ -14,8 +14,11 @@ import { signIn, signUp, checkAuthMiddleware } from "./controllers/authControlle
 import { sendMail, confirmMail } from "./controllers/confirmEmailControllers.js";
 import {
     getTenorTrendings, getTenorSearch,
-    getPhotos, getPhotoByID, getPhotosByQuery,
-    getStroyblockPhotosByQuery, getStroyblockVideosByQuery, getStroyblockVideoByID, getStroyblockPhotoByID
+    getTenorByID,
+    getPhoto_list,
+    getPhoto_search,
+    getSVG_search,
+    getSVG_code
 } from "./controllers/apiControllers.js";
 import { changeEmail, deleteAccount } from "./controllers/profileControllers.js";
 import { deleteNotActive } from "./controllers/util.js";
@@ -66,17 +69,15 @@ app.post('/auth/confirmMail', confirmMail);
 app.post('/profile/delete', checkAuthMiddleware, deleteAccount);
 app.post('/profile/changeEmail', checkAuthMiddleware, changeEmail);
 
-app.post('/api/tenor/list', getTenorTrendings) //!
-app.post('/api/tenor/search', getTenorSearch) //?
+app.post('/api/tenor/list', getTenorTrendings)
+app.post('/api/tenor/search', getTenorSearch)
+app.post('/api/tenor/getByID', getTenorByID)
 
-app.post('/api/photos/list', getPhotos) //!
-app.post('/api/photos/photosByQuery', getPhotosByQuery) //?
-app.post('/api/photos/photoByID', getPhotoByID) //*
+app.post('/api/photos/list', getPhoto_list) //!
+app.post('/api/photos/search', getPhoto_search) //?
 
-app.post('/api/storyblock/photosByQuery', getStroyblockPhotosByQuery) //?
-app.post('/api/storyblock/videosByQuery', getStroyblockVideosByQuery) //?
-// app.post('/api/storyblock/video', getStroyblockVideoByID) //*
-// app.post('/api/storyblock/photo', getStroyblockPhotoByID) //*
+app.post('/api/svg/search', getSVG_search) //?
+app.post('/api/svg/code', getSVG_code) //?
 
 app.listen(3000, '127.0.0.1', () => {
     console.log('server is ok');

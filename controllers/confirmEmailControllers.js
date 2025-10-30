@@ -67,6 +67,8 @@ export const confirmMail = async (req, res) => {
 
       const safeUser = {
         email: user[0].email,
+        favorites: user[0].favorites,
+        historyLoad: user[0].historyLoad,
         active: true,
         id: user[0]._id
       };
@@ -141,6 +143,8 @@ export const sendMail = async (req, res) => {
 
     const safeUser = {
       email: user[0].email,
+      favorites: user[0].favorites,
+      historyLoad: user[0].historyLoad,
       active: user[0].isActive,
       id: user[0]._id
     };

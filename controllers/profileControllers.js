@@ -17,6 +17,7 @@ export const deleteAccount = async (req, res) => {
         const existingUser = await findByEmail(email);
 
         if (!existingUser[0]) {
+            console.log('not ex')
             return res.status(400).json({
                 message: 'Ошибка.',
             });
@@ -67,6 +68,8 @@ export const changeEmail = async (req, res) => {
 
             const safeUser = {
                 email: newEmail,
+                favorites: user[0].favorites,
+                historyLoad: user[0].historyLoad,
                 active: user[0].isActive,
                 id: user[0]._id
             };

@@ -40,7 +40,7 @@ export const addNewUser = async (user) => {
 };
 
 export const updateUser = async (user_id, user_rev, updatedDoc) => {
-  const response = await axios.post(
+  await axios.post(
     `${process.env.BD_LINK}users/_bulk_docs`,
     {
       docs: [

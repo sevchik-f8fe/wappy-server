@@ -22,6 +22,8 @@ import {
 } from "./controllers/apiControllers.js";
 import { changeEmail, deleteAccount } from "./controllers/profileControllers.js";
 import { deleteNotActive } from "./controllers/util.js";
+import { addToFovorites, removeFromFovorites } from "./controllers/favoriteControllers.js";
+import { addToHistory } from "./controllers/histrotyLoadControllers.js";
 
 const app = express();
 
@@ -68,16 +70,19 @@ app.post('/auth/confirmMail', confirmMail);
 
 app.post('/profile/delete', checkAuthMiddleware, deleteAccount);
 app.post('/profile/changeEmail', checkAuthMiddleware, changeEmail);
+app.post('/profile/favorites/add', checkAuthMiddleware, addToFovorites);
+app.post('/profile/favorites/remove', checkAuthMiddleware, removeFromFovorites);
+app.post('/profile/history/add', checkAuthMiddleware, addToHistory);
 
 app.post('/api/tenor/list', getTenorTrendings)
 app.post('/api/tenor/search', getTenorSearch)
 app.post('/api/tenor/getByID', getTenorByID)
 
-app.post('/api/photos/list', getPhoto_list) //!
-app.post('/api/photos/search', getPhoto_search) //?
+app.post('/api/photos/list', getPhoto_list)
+app.post('/api/photos/search', getPhoto_search)
 
-app.post('/api/svg/search', getSVG_search) //?
-app.post('/api/svg/code', getSVG_code) //?
+app.post('/api/svg/search', getSVG_search)
+app.post('/api/svg/code', getSVG_code)
 
 app.listen(3000, '127.0.0.1', () => {
     console.log('server is ok');

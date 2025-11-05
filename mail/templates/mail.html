@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!-- <!DOCTYPE html>
 <html>
 <head>
   <title>Подтверждение почты на wappy</title>
@@ -8,5 +8,109 @@
   <p>Код подтверждения:</p>
   <p style="padding: 1em .5em; font-weight: 600; color:rgb(54, 180, 54); font-size: 3em;">{{code}}</p>
   <p>Если это были не вы, то проигнорируйте это сообщение.</p>
+</body>
+</html> -->
+
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Подтверждение входа - Wappy</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+  </style>
+</head>
+<body style="margin: 0; padding: 0; font-family: 'Inter', Arial, sans-serif; background-color: #f8fafc;">
+  <table width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color: #f8fafc;">
+    <tr>
+      <td align="center" style="padding: 40px 0;">
+        <table width="100%" border="0" cellpadding="0" cellspacing="0" style="max-width: 500px; margin: 0 auto; background: white; border-radius: 16px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); overflow: hidden;">
+          <tr>
+            <td style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 40px 30px 30px; text-align: center;">
+              <table width="100%" border="0" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td style="text-align: center;">
+                    <h1 style="color: white; font-size: 28px; font-weight: 700; margin: 0 0 10px; letter-spacing: -0.5px;">Wappy</h1>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <tr>
+            <td style="padding: 40px 30px 30px;">
+              <table width="100%" border="0" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td style="text-align: center; padding-bottom: 25px;">
+                    <div style="background: #f1f5f9; border-radius: 50%; width: 80px; height: 80px; display: inline-flex; align-items: center; justify-content: center;">
+                      <svg width="36" height="36" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z" stroke="#667eea" stroke-width="2"/>
+                        <path d="M8 12L11 15L16 9" stroke="#667eea" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                      </svg>
+                    </div>
+                  </td>
+                </tr>
+
+                <tr>
+                  <td style="text-align: center; padding-bottom: 15px;">
+                    <h2 style="color: #1e293b; font-size: 24px; font-weight: 600; margin: 0; letter-spacing: -0.5px;">Подтверждение входа</h2>
+                  </td>
+                </tr>
+
+                <tr>
+                  <td style="text-align: center; padding-bottom: 30px;">
+                    <p style="color: #64748b; font-size: 16px; line-height: 1.6; margin: 0;">
+                      На ваш аккаунт был произведен вход. Используйте код ниже для подтверждения:
+                    </p>
+                  </td>
+                </tr>
+
+                <tr>
+                  <td style="text-align: center; padding-bottom: 35px;">
+                    <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; font-size: 32px; font-weight: 700; letter-spacing: 8px; padding: 20px; border-radius: 12px; display: inline-block; text-align: center; min-width: 280px;">
+                      {{code}}
+                    </div>
+                  </td>
+                </tr>
+
+                <tr>
+                  <td style="text-align: center; padding-bottom: 10px;">
+                    <p style="color: #94a3b8; font-size: 14px; line-height: 1.5; margin: 0;">
+                      Код действителен в течение <strong style="color: #64748b;">5 минут</strong>
+                    </p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <tr>
+            <td style="background: #f8fafc; padding: 25px 30px; border-top: 1px solid #e2e8f0;">
+              <table width="100%" border="0" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td style="text-align: center;">
+                    <p style="color: #94a3b8; font-size: 14px; line-height: 1.5; margin: 0 0 15px;">
+                      Если это были не вы, немедленно измените пароль и обратитесь в поддержку.
+                    </p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+
+        <table width="100%" border="0" cellpadding="0" cellspacing="0" style="max-width: 500px; margin: 20px auto 0;">
+          <tr>
+            <td style="text-align: center;">
+              <p style="color: #94a3b8; font-size: 12px; margin: 5px 0;">
+                Нужна помощь? <a href="mailto:kononovseva06@yandex.ru" style="color: #667eea; text-decoration: none;">Обратитесь в поддержку</a>
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
 </body>
 </html>

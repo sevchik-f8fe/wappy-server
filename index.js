@@ -10,7 +10,7 @@ import * as dotenv from 'dotenv';
 
 dotenv.config();
 
-import { signIn, signUp, checkAuthMiddleware } from "./controllers/authControllers.js";
+import { signIn, signUp, checkAuthMiddleware, updateTokensMiddleware } from "./controllers/authControllers.js";
 import { sendMail, confirmMail } from "./controllers/confirmEmailControllers.js";
 import {
     getTenorTrendings, getTenorSearch,
@@ -22,7 +22,7 @@ import {
 } from "./controllers/apiControllers.js";
 import { changeEmail, deleteAccount } from "./controllers/profileControllers.js";
 import { deleteNotActive } from "./controllers/util.js";
-import { addToFovorites, removeFromFovorites } from "./controllers/favoriteControllers.js";
+import { addToFavorites, removeFromFavorites } from "./controllers/favoriteControllers.js";
 import { addToHistory } from "./controllers/histrotyLoadControllers.js";
 
 const app = express();
@@ -68,11 +68,11 @@ app.post('/auth/signin', signIn, sendMail);
 app.post('/auth/sendMail', sendMail);
 app.post('/auth/confirmMail', confirmMail);
 
-app.post('/profile/delete', checkAuthMiddleware, deleteAccount);
-app.post('/profile/changeEmail', checkAuthMiddleware, changeEmail);
-app.post('/profile/favorites/add', checkAuthMiddleware, addToFovorites);
-app.post('/profile/favorites/remove', checkAuthMiddleware, removeFromFovorites);
-app.post('/profile/history/add', checkAuthMiddleware, addToHistory);
+app.post('/profile/delete', checkAuthMiddleware, updateTokensMiddleware, deleteAccount);
+app.post('/profile/changeEmail', checkAuthMiddleware, updateTokensMiddleware, changeEmail);
+app.post('/profile/favorites/add', checkAuthMiddleware, updateTokensMiddleware, addToFavorites);
+app.post('/profile/favorites/remove', checkAuthMiddleware, updateTokensMiddleware, removeFromFavorites);
+app.post('/profile/history/add', checkAuthMiddleware, updateTokensMiddleware, addToHistory);
 
 app.post('/api/tenor/list', getTenorTrendings)
 app.post('/api/tenor/search', getTenorSearch)

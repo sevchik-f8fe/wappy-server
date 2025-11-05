@@ -36,7 +36,7 @@ export const deleteAccount = async (req, res) => {
 
 export const changeEmail = async (req, res) => {
     try {
-        const { enterCode, email, newEmail } = req.body;
+        const { enterCode, email, newEmail, refreshToken, token } = req.body;
 
         if (!validateInput(email) || !validateInput(enterCode) || !validateInput(newEmail)) {
             return res.status(400).json({
@@ -71,10 +71,15 @@ export const changeEmail = async (req, res) => {
                 favorites: user[0].favorites,
                 historyLoad: user[0].historyLoad,
                 active: user[0].isActive,
-                id: user[0]._id
+                id: user[0]._id,
+                refreshToken: refreshToken
             };
 
-            res.status(200).json({ user: safeUser });
+            if (req.body.isRefresh) {
+                res.status(200).json({ user: safeUser, token: token });
+            } else {
+                res.status(200).json({ user: safeUser });
+            }
         } else {
             return res.status(400).json({
                 message: 'Ошибка.',

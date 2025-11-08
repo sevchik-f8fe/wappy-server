@@ -21,7 +21,7 @@ import {
     getPhoto_list,
     getPhoto_search,
     getSVG_search,
-    getSVG_code
+    getSVG_code,
 } from "./controllers/apiControllers.js";
 import { changeEmail, deleteAccount } from "./controllers/profileControllers.js";
 import { deleteNotActive } from "./controllers/util.js";

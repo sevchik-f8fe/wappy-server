@@ -1,0 +1,7 @@
+{
+  "all": true,
+  "include": ["controllers/**/*.js", "util.js"],
+  "exclude": ["test/**", "node_modules/**"],
+  "reporter": ["html", "text"],
+  "report-dir": "./coverage"
+}

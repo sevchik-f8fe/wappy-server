@@ -17,7 +17,6 @@ export const deleteAccount = async (req, res) => {
         const existingUser = await findByEmail(email);
 
         if (!existingUser[0]) {
-            console.log('not ex')
             return res.status(400).json({
                 message: 'Ошибка.',
             });
@@ -46,13 +45,13 @@ export const changeEmail = async (req, res) => {
 
         const user = await findByEmail(email);
 
-        if (!user[0] || !user[0].emailChange.code || !user[0].emailChange.generatedAt) {
+        if (!user[0] || !user[0]?.emailChange?.code || !user[0]?.emailChange?.generatedAt) {
             return res.status(400).json({
                 message: 'Ошибка.',
             });
         }
 
-        if ((new Date() - user[0].emailChange.generatedAt) > 1000 * 60 * 5) {
+        if ((new Date() - user[0]?.emailChange?.generatedAt) > 1000 * 60 * 5) {
             return res.status(400).json({
                 message: 'Ошибка.',
             });
@@ -86,7 +85,6 @@ export const changeEmail = async (req, res) => {
             });
         }
     } catch (err) {
-        console.log(err)
         res.status(500).json({
             message: 'Ошибка.',
         });

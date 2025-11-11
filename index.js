@@ -4,10 +4,8 @@ import axiosRetry from 'axios-retry';
 import cors from "cors";
 import helmet from "helmet";
 import hpp from "hpp";
-import session from 'express-session';
-import csrf from 'csurf';
 import { rateLimit } from 'express-rate-limit';
-import cookieParser from "cookie-parser";
+import crypto from 'crypto';
 
 import * as dotenv from 'dotenv';
 
@@ -29,29 +27,6 @@ import { addToFavorites, removeFromFavorites } from "./controllers/favoriteContr
 import { addToHistory } from "./controllers/histrotyLoadControllers.js";
 
 const app = express();
-
-app.use(session({
-    secret: process.env.SESSION_SECRET,
-    resave: false,
-    saveUninitialized: false,
-    cookie: {
-        secure: process.env.NODE_ENV === 'production',
-        httpOnly: true,
-        maxAge: 12 * 60 * 60 * 1000,
-        sameSite: 'lax'
-    }
-}));
-
-const csrfProtection = csrf({
-    cookie: {
-        key: '_csrf',
-        path: '/',
-        secure: process.env.NODE_ENV === 'production',
-        httpOnly: true,
-        maxAge: 3600,
-        cookie: true
-    }
-});
 
 axiosRetry(axios, { retries: 5 });
 
@@ -75,7 +50,83 @@ app.use(helmet({
     }
 }));
 app.use(hpp());
-app.use(cookieParser())
+
+const activeCsrfTokens = new Map();
+
+app.use((req, res, next) => {
+    if (req.method === 'GET' && !req.path.includes('/api/')) {
+        const csrfToken = crypto.randomBytes(32).toString('hex');
+        const tokenId = crypto.randomBytes(16).toString('hex');
+
+        activeCsrfTokens.set(tokenId, {
+            token: csrfToken,
+            timestamp: Date.now(),
+            userId: null
+        });
+
+        cleanupExpiredTokens();
+
+        res.setHeader('x-csrf-token', csrfToken);
+        res.setHeader('x-csrf-token-id', tokenId);
+    }
+    next();
+});
+
+function cleanupExpiredTokens() {
+    const now = Date.now();
+    for (const [tokenId, tokenData] of activeCsrfTokens.entries()) {
+        if (now - tokenData.timestamp > 60 * 60 * 1000) {
+            activeCsrfTokens.delete(tokenId);
+        }
+    }
+}
+
+const csrfProtection = (req, res, next) => {
+    if (['POST', 'PUT', 'DELETE', 'PATCH'].includes(req.method)) {
+        const clientToken = req.headers['x-csrf-token'];
+        const tokenId = req.headers['x-csrf-token-id'];
+
+        if (!clientToken || !tokenId) {
+            return res.status(403).json({
+                message: 'CSRF token missing',
+                code: 'CSRF_TOKEN_MISSING'
+            });
+        }
+
+        const serverTokenData = activeCsrfTokens.get(tokenId);
+
+        if (!serverTokenData) {
+            return res.status(403).json({
+                message: 'CSRF token expired or invalid',
+                code: 'CSRF_TOKEN_EXPIRED'
+            });
+        }
+
+        if (serverTokenData.token !== clientToken ||
+            Date.now() - serverTokenData.timestamp > 60 * 60 * 1000) {
+            activeCsrfTokens.delete(tokenId);
+            return res.status(403).json({
+                message: 'CSRF token validation failed',
+                code: 'CSRF_TOKEN_INVALID'
+            });
+        }
+        console.log(serverTokenData.token, ' = ', clientToken)
+        activeCsrfTokens.delete(tokenId);
+
+        const newCsrfToken = crypto.randomBytes(32).toString('hex');
+        const newTokenId = crypto.randomBytes(16).toString('hex');
+
+        activeCsrfTokens.set(newTokenId, {
+            token: newCsrfToken,
+            timestamp: Date.now(),
+            userId: serverTokenData.userId
+        });
+
+        res.setHeader('x-csrf-token', newCsrfToken);
+        res.setHeader('x-csrf-token-id', newTokenId);
+    }
+    next();
+};
 
 const limiter = rateLimit({
     windowMs: 5000,
@@ -88,36 +139,28 @@ const limiter = rateLimit({
 
 app.use(limiter);
 
-app.use((err, req, res, next) => {
-    if (err.code !== 'EBADCSRFTOKEN') return next(err);
-
-    res.status(403).json({
-        message: 'Invalid CSRF token'
-    });
-});
-
-app.get('/api/csrf-token', csrfProtection, (req, res) => {
-    res.json({ csrfToken: req.csrfToken() });
-});
-
 await axios.get(process.env.BD_LINK)
     .then(() => console.log('db is ok'))
     .catch(err => console.log('db error: ', err))
 
-const INTERVAL_MS = 5 * 60 * 1000;
+app.get('/csrf-token', (req, res) => {
+    const csrfToken = crypto.randomBytes(32).toString('hex');
+    const tokenId = crypto.randomBytes(16).toString('hex');
 
-async function runCleanup() {
-    try {
-        console.log('Запуск очистки неактивных документов...');
-        await deleteNotActive();
-        console.log('Очистка завершена.');
-    } catch (error) {
-        console.error('Ошибка при очистке:', error);
-    }
-}
+    activeCsrfTokens.set(tokenId, {
+        token: csrfToken,
+        timestamp: Date.now(),
+        userId: null
+    });
 
-setInterval(runCleanup, INTERVAL_MS);
-runCleanup();
+    res.setHeader('x-csrf-token', csrfToken);
+    res.setHeader('x-csrf-token-id', tokenId);
+    res.json({
+        message: 'CSRF token generated',
+        token: csrfToken,
+        tokenId: tokenId
+    });
+});
 
 app.post('/auth/signup', csrfProtection, signUp, sendMail);
 app.post('/auth/signin', csrfProtection, signIn, sendMail);
@@ -143,3 +186,16 @@ app.post('/api/svg/code', getSVG_code)
 app.listen(3000, '127.0.0.1', () => {
     console.log('server is ok');
 });
+
+const INTERVAL_MS = 5 * 60 * 1000;
+
+async function runCleanup() {
+    try {
+        await deleteNotActive();
+    } catch (error) {
+        console.error('Ошибка при очистке:', error);
+    }
+}
+
+setInterval(runCleanup, INTERVAL_MS);
+runCleanup();

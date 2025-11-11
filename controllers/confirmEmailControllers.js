@@ -8,7 +8,6 @@ export const confirmMail = async (req, res) => {
         const { enterCode, email, path } = req.body;
 
         if (!validateInput(email) || !validateInput(enterCode)) {
-            console.log('notval: ', enterCode, email)
             return res.status(400).json({
                 message: 'Ошибка.',
             });
@@ -16,21 +15,20 @@ export const confirmMail = async (req, res) => {
 
         const user = await findByEmail(email);
 
-        if (!user[0] || !user[0][path].code || !user[0][path].generatedAt) {
-            console.log('notvaluser', user[0], user[0][path].code, user[0][path].generatedAt)
+        if (!user[0] || !user[0][path]?.code || !user[0][path]?.generatedAt) {
+            console.log(user[0])
             return res.status(400).json({
                 message: 'Ошибка.',
             });
         }
 
-        if ((new Date() - user[0][path].generatedAt) > 1000 * 60 * 5) {
-            console.log('notvaldate')
+        if ((new Date() - user[0][path]?.generatedAt) > 1000 * 60 * 5) {
             return res.status(400).json({
                 message: 'Ошибка.',
             });
         }
         const refreshToken = jwt.sign(
-            { id: user._id },
+            { id: user[0]._id },
             process.env.JWT_REFRESH,
             { expiresIn: '7d' }
         );
@@ -38,7 +36,7 @@ export const confirmMail = async (req, res) => {
         const salt = await bcrypt.genSalt(10);
         const refreshTokenHash = await bcrypt.hash(refreshToken, salt);
 
-        if (enterCode == user[0][path].code) {
+        if (enterCode == user[0][path]?.code) {
             switch (path) {
                 case 'signInVerification': {
                     await updateUser(user[0]._id, user[0]._rev, {
@@ -50,7 +48,7 @@ export const confirmMail = async (req, res) => {
 
                     break;
                 }
-                case 'activation': {
+                default: {
                     await updateUser(user[0]._id, user[0]._rev, {
                         ...user[0],
                         isActive: true,
@@ -58,16 +56,11 @@ export const confirmMail = async (req, res) => {
                         activation: { code: null, generatedAt: null },
                         updatedAt: new Date().getTime()
                     });
-
-                    break;
-                }
-                default: {
-                    console.log('ups!')
                 }
             }
 
             const accessToken = jwt.sign(
-                { id: user._id, },
+                { id: user[0]._id, },
                 process.env.JWT,
                 { expiresIn: '1h', },
             );
@@ -83,7 +76,6 @@ export const confirmMail = async (req, res) => {
 
             return res.status(200).json({ user: safeUser, token: accessToken });
         } else {
-            console.log(err)
             return res.status(400).json({
                 message: 'Ошибка.',
             });
@@ -157,11 +149,8 @@ export const sendMail = async (req, res) => {
             id: user[0]._id
         };
 
-        console.log('user safe send: ', safeUser);
-
         res.status(200).json({ user: safeUser });
     } catch (err) {
-        console.log(err)
         res.status(500).json({
             message: 'Ошибка.',
         });

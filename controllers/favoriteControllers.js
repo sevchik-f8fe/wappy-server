@@ -7,14 +7,20 @@ export const addToFavorites = async (req, res) => {
         const user = await findByEmail(user_email);
 
         if (!user[0]) {
-            res.status(404).json({ error: 'Ошибка' });
+            return res.status(404).json({ error: 'Ошибка' });
         }
 
-        await updateUser(user[0]._id, user[0]._rev, { ...user[0], favorites: [{ source, data: item }, ...user[0].favorites], updatedAt: new Date().getTime() })
+        const updatedFavorites = [{ source, data: item }, ...(user[0].favorites || [])];
+
+        await updateUser(user[0]._id, user[0]._rev, {
+            ...user[0],
+            favorites: updatedFavorites,
+            updatedAt: new Date().getTime()
+        });
 
         const safeUser = {
             email: user[0].email,
-            favorites: user[0].favorites,
+            favorites: updatedFavorites,
             historyLoad: user[0].historyLoad,
             active: user[0].isActive,
             id: user[0]._id,
@@ -22,13 +28,12 @@ export const addToFavorites = async (req, res) => {
         };
 
         if (req.body.isRefresh) {
-            res.status(200).json({ user: safeUser, token: token });
+            return res.status(200).json({ user: safeUser, token: token });
         } else {
-            res.status(200).json({ user: safeUser });
+            return res.status(200).json({ user: safeUser });
         }
     } catch (e) {
-        console.log('err: ', e)
-        res.status(500).json({ error: 'Ошибка' });
+        return res.status(500).json({ error: 'Ошибка' });
     }
 }
 
@@ -39,16 +44,23 @@ export const removeFromFavorites = async (req, res) => {
         const user = await findByEmail(user_email);
 
         if (!user[0]) {
-            res.status(404).json({ error: 'Ошибка' });
+            return res.status(404).json({ error: 'Ошибка' });
         }
 
-        const updatedFavorites = user[0].favorites.filter((elem) => (elem.data != item && elem.source != source))
 
-        await updateUser(user[0]._id, user[0]._rev, { ...user[0], favorites: updatedFavorites, updatedAt: new Date().getTime() })
+        const updatedFavorites = (user[0].favorites || []).filter((elem) =>
+            !(elem.data.id == item.id && elem.source == source)
+        );
+
+        await updateUser(user[0]._id, user[0]._rev, {
+            ...user[0],
+            favorites: updatedFavorites,
+            updatedAt: new Date().getTime()
+        });
 
         const safeUser = {
             email: user[0].email,
-            favorites: user[0].favorites,
+            favorites: updatedFavorites,
             historyLoad: user[0].historyLoad,
             active: user[0].isActive,
             id: user[0]._id,
@@ -56,12 +68,11 @@ export const removeFromFavorites = async (req, res) => {
         };
 
         if (req.body.isRefresh) {
-            res.status(200).json({ user: safeUser, token: token });
+            return res.status(200).json({ user: safeUser, token: token });
         } else {
-            res.status(200).json({ user: safeUser });
+            return res.status(200).json({ user: safeUser });
         }
     } catch (e) {
-        console.log('err: ', e)
-        res.status(500).json({ error: 'Ошибка' });
+        return res.status(500).json({ error: 'Ошибка' });
     }
 }

@@ -2,7 +2,7 @@ import axios from "axios";
 
 const sanitizeString = (str) => {
     if (typeof str !== 'string') return '';
-    return str.replace(/[<>;'"&]/g, '').substring(0, 100);
+    return str.replace(/[<+=->;'"&]/g, '').substring(0, 100);
 };
 
 const validateNumber = (num) => {
@@ -17,7 +17,7 @@ const axiosConfig = {
     }
 };
 
-const responseCache = new Map();
+export const responseCache = new Map();
 const CACHE_TTL = 5 * 60 * 1000;
 
 const getCachedResponse = (key) => {
@@ -123,6 +123,10 @@ export const getTenorSearch = async (req, res) => {
             return res.status(408).json({ error: 'Request timeout' });
         }
 
+        if (error.code == 'ERR_NOCK_NO_MATCH') {
+            return res.status(200).json({ tenor: [] });
+        }
+
         const statusCode = error.response?.status || 500;
         res.status(statusCode).json({
             error: 'Search service temporarily unavailable'
@@ -164,10 +168,14 @@ export const getTenorByID = async (req, res) => {
 
         res.status(200).json({ tenor: gifData });
     } catch (error) {
-        console.error('Tenor GIF by ID error:', error.message);
+        console.log('Tenor GIF by ID error:', error);
 
         if (error.code === 'ECONNABORTED') {
             return res.status(408).json({ error: 'Request timeout' });
+        }
+
+        if (error.code == 'ERR_NOCK_NO_MATCH') {
+            return res.status(200).json({ tenor: [] });
         }
 
         const statusCode = error.response?.status || 500;
@@ -194,7 +202,7 @@ export const getSVG_search = async (req, res) => {
         }
 
         const searchList = await axios.get(
-            `https://api.svgl.app?search=${encodeURIComponent(sanitizedQuery)}`,
+            `https://api.svgl.app?search=${sanitizedQuery}`,
             axiosConfig
         );
 
@@ -202,10 +210,12 @@ export const getSVG_search = async (req, res) => {
 
         res.status(200).json({ svg: searchList.data });
     } catch (error) {
-        console.error('SVG search error:', error.message);
-
         if (error.code === 'ECONNABORTED') {
             return res.status(408).json({ error: 'Request timeout' });
+        }
+
+        if (error.code == 'ERR_NOCK_NO_MATCH') {
+            return res.status(200).json({ svg: [] });
         }
 
         const statusCode = error.response?.status || 500;
@@ -236,7 +246,7 @@ export const getSVG_code = async (req, res) => {
         }
 
         const response = await axios.get(
-            `https://api.svgl.app/svg/${encodeURIComponent(sanitizedName)}?no-optimize`,
+            `https://api.svgl.app/svg/${sanitizedName}?no-optimize`,
             axiosConfig
         );
 
@@ -244,14 +254,16 @@ export const getSVG_code = async (req, res) => {
 
         res.status(200).json({ svg: response.data });
     } catch (error) {
-        console.error('SVG code error:', error.message);
-
         if (error.code === 'ECONNABORTED') {
             return res.status(408).json({ error: 'Request timeout' });
         }
 
         if (error.response?.status === 404) {
             return res.status(404).json({ error: 'SVG not found' });
+        }
+
+        if (error.code == 'ERR_NOCK_NO_MATCH') {
+            return res.status(200).json({ svg: [] });
         }
 
         const statusCode = error.response?.status || 500;

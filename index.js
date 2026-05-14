@@ -1,3 +1,28 @@
+/**
+ * Главный файл сервера Express.js
+ * 
+ * Настройки и middleware:
+ * - CORS: разрешены запросы с CLIENT_URL
+ * - Helmet: защита HTTP заголовков (CSP, frameguard)
+ * - HPP: защита от параметр поллинга
+ * - Rate limiting: 20 запросов за 5 секунд
+ * - Логирование: correlation ID и HTTP логгер
+ * - Метрики: Prometheus для мониторинга
+ * 
+ * API маршруты:
+ * - /auth/* - аутентификация пользователей
+ * - /profile/* - профиль пользователя (избранное, история)
+ * - /api/* - внешние API (Tenor, WHVN, SVG)
+ * - /ad/* - административная панель
+ * 
+ * Фоновые задачи:
+ * - Очистка неактивных пользователей (каждые 5 минут)
+ * - Мониторинг подключения к БД
+ * 
+ * Health check: /health - статус сервера, uptime, память
+ * Метрики: /metrics - Prometheus метрики
+ */
+
 import express from "express";
 import axios from 'axios';
 import axiosRetry from 'axios-retry';
@@ -5,7 +30,10 @@ import cors from "cors";
 import helmet from "helmet";
 import hpp from "hpp";
 import { rateLimit } from 'express-rate-limit';
-import crypto from 'crypto';
+import { correlationMiddleware, httpLoggerMiddleware, logger } from './logsControllers/logger.js';
+import {
+    register, httpRequestDuration, httpRequestsTotal
+} from './logsControllers/metricks.js'
 
 import * as dotenv from 'dotenv';
 
@@ -25,6 +53,7 @@ import { changeEmail, deleteAccount } from "./controllers/profileControllers.js"
 import { deleteNotActive } from "./controllers/util.js";
 import { addToFavorites, removeFromFavorites } from "./controllers/favoriteControllers.js";
 import { addToHistory } from "./controllers/histrotyLoadControllers.js";
+import { adminAuth, checkAdminAuthMiddleware, deleteUserReq, getCount, getOnlineCount, getUsers, updateAdminTokensMiddleware } from "./controllers/adminControllers.js";
 
 const app = express();
 
@@ -51,82 +80,55 @@ app.use(helmet({
 }));
 app.use(hpp());
 
-const activeCsrfTokens = new Map();
+app.use(correlationMiddleware);
+app.use(httpLoggerMiddleware);
 
 app.use((req, res, next) => {
-    if (req.method === 'GET' && !req.path.includes('/api/')) {
-        const csrfToken = crypto.randomBytes(32).toString('hex');
-        const tokenId = crypto.randomBytes(16).toString('hex');
+    const start = Date.now();
 
-        activeCsrfTokens.set(tokenId, {
-            token: csrfToken,
-            timestamp: Date.now(),
-            userId: null
-        });
+    res.on('finish', () => {
+        const duration = (Date.now() - start) / 1000;
+        const route = req.route?.path || req.path;
 
-        cleanupExpiredTokens();
+        httpRequestDuration
+            .labels(req.method, route, res.statusCode)
+            .observe(duration);
 
-        res.setHeader('x-csrf-token', csrfToken);
-        res.setHeader('x-csrf-token-id', tokenId);
-    }
+        httpRequestsTotal
+            .labels(req.method, route, res.statusCode)
+            .inc();
+    });
+
     next();
 });
 
-function cleanupExpiredTokens() {
-    const now = Date.now();
-    for (const [tokenId, tokenData] of activeCsrfTokens.entries()) {
-        if (now - tokenData.timestamp > 60 * 60 * 1000) {
-            activeCsrfTokens.delete(tokenId);
-        }
+app.get('/metrics', async (req, res) => {
+    try {
+        res.set('Content-Type', register.contentType);
+        const metrics = await register.metrics();
+        res.send(metrics);
+    } catch (error) {
+        res.status(500).send(error.toString());
     }
-}
+});
 
-const csrfProtection = (req, res, next) => {
-    if (['POST', 'PUT', 'DELETE', 'PATCH'].includes(req.method)) {
-        const clientToken = req.headers['x-csrf-token'];
-        const tokenId = req.headers['x-csrf-token-id'];
+process.on('unhandledRejection', (reason, promise) => {
+    logger.error('Unhandled Rejection', { reason, promise });
+});
 
-        if (!clientToken || !tokenId) {
-            return res.status(403).json({
-                message: 'CSRF token missing',
-                code: 'CSRF_TOKEN_MISSING'
-            });
-        }
+process.on('uncaughtException', (error) => {
+    logger.error('Uncaught Exception', { error: error.message, stack: error.stack });
+    process.exit(1);
+});
 
-        const serverTokenData = activeCsrfTokens.get(tokenId);
-
-        if (!serverTokenData) {
-            return res.status(403).json({
-                message: 'CSRF token expired or invalid',
-                code: 'CSRF_TOKEN_EXPIRED'
-            });
-        }
-
-        if (serverTokenData.token !== clientToken ||
-            Date.now() - serverTokenData.timestamp > 60 * 60 * 1000) {
-            activeCsrfTokens.delete(tokenId);
-            return res.status(403).json({
-                message: 'CSRF token validation failed',
-                code: 'CSRF_TOKEN_INVALID'
-            });
-        }
-        console.log(serverTokenData.token, ' = ', clientToken)
-        activeCsrfTokens.delete(tokenId);
-
-        const newCsrfToken = crypto.randomBytes(32).toString('hex');
-        const newTokenId = crypto.randomBytes(16).toString('hex');
-
-        activeCsrfTokens.set(newTokenId, {
-            token: newCsrfToken,
-            timestamp: Date.now(),
-            userId: serverTokenData.userId
-        });
-
-        res.setHeader('x-csrf-token', newCsrfToken);
-        res.setHeader('x-csrf-token-id', newTokenId);
-    }
-    next();
-};
+app.get('/health', (req, res) => {
+    res.json({
+        status: 'OK',
+        timestamp: new Date().toISOString(),
+        uptime: process.uptime(),
+        memory: process.memoryUsage()
+    });
+});
 
 const limiter = rateLimit({
     windowMs: 5000,
@@ -140,38 +142,19 @@ const limiter = rateLimit({
 app.use(limiter);
 
 await axios.get(process.env.BD_LINK)
-    .then(() => console.log('db is ok'))
-    .catch(err => console.log('db error: ', err))
+    .then(() => logger.info('db is ok'))
+    .catch(() => logger.error('db error'))
 
-app.get('/csrf-token', (req, res) => {
-    const csrfToken = crypto.randomBytes(32).toString('hex');
-    const tokenId = crypto.randomBytes(16).toString('hex');
+app.post('/auth/signup', signUp, sendMail);
+app.post('/auth/signin', signIn, sendMail);
+app.post('/auth/sendMail', sendMail);
+app.post('/auth/confirmMail', confirmMail);
 
-    activeCsrfTokens.set(tokenId, {
-        token: csrfToken,
-        timestamp: Date.now(),
-        userId: null
-    });
-
-    res.setHeader('x-csrf-token', csrfToken);
-    res.setHeader('x-csrf-token-id', tokenId);
-    res.json({
-        message: 'CSRF token generated',
-        token: csrfToken,
-        tokenId: tokenId
-    });
-});
-
-app.post('/auth/signup', csrfProtection, signUp, sendMail);
-app.post('/auth/signin', csrfProtection, signIn, sendMail);
-app.post('/auth/sendMail', csrfProtection, sendMail);
-app.post('/auth/confirmMail', csrfProtection, confirmMail);
-
-app.post('/profile/delete', csrfProtection, checkAuthMiddleware, updateTokensMiddleware, deleteAccount);
-app.post('/profile/changeEmail', csrfProtection, checkAuthMiddleware, updateTokensMiddleware, changeEmail);
-app.post('/profile/favorites/add', csrfProtection, checkAuthMiddleware, updateTokensMiddleware, addToFavorites);
-app.post('/profile/favorites/remove', csrfProtection, checkAuthMiddleware, updateTokensMiddleware, removeFromFavorites);
-app.post('/profile/history/add', csrfProtection, checkAuthMiddleware, updateTokensMiddleware, addToHistory);
+app.post('/profile/delete', checkAuthMiddleware, updateTokensMiddleware, deleteAccount);
+app.post('/profile/changeEmail', checkAuthMiddleware, updateTokensMiddleware, changeEmail);
+app.post('/profile/favorites/add', checkAuthMiddleware, updateTokensMiddleware, addToFavorites);
+app.post('/profile/favorites/remove', checkAuthMiddleware, updateTokensMiddleware, removeFromFavorites);
+app.post('/profile/history/add', checkAuthMiddleware, updateTokensMiddleware, addToHistory);
 
 app.post('/api/tenor/list', getTenorTrendings)
 app.post('/api/tenor/search', getTenorSearch)
@@ -183,9 +166,11 @@ app.post('/api/photos/search', getPhoto_search)
 app.post('/api/svg/search', getSVG_search)
 app.post('/api/svg/code', getSVG_code)
 
-app.listen(3000, '127.0.0.1', () => {
-    console.log('server is ok');
-});
+app.post('/ad/auth', adminAuth);
+app.post('/ad/delete', checkAdminAuthMiddleware, updateAdminTokensMiddleware, deleteUserReq);
+app.post('/ad/get/users', checkAdminAuthMiddleware, updateAdminTokensMiddleware, getUsers)
+app.post('/ad/get/usersCount', checkAdminAuthMiddleware, updateAdminTokensMiddleware, getCount)
+app.post('/ad/get/usersOnlineCount', checkAdminAuthMiddleware, updateAdminTokensMiddleware, getOnlineCount)
 
 const INTERVAL_MS = 5 * 60 * 1000;
 
@@ -193,9 +178,16 @@ async function runCleanup() {
     try {
         await deleteNotActive();
     } catch (error) {
-        console.error('Ошибка при очистке:', error);
+        logger.error('Error processing data request', {
+            error: error.message,
+            stack: error.stack
+        });
     }
 }
 
 setInterval(runCleanup, INTERVAL_MS);
 runCleanup();
+
+app.listen(3000, '0.0.0.0', () => {
+    logger.info('Server running on http://0.0.0.0:3000');
+});

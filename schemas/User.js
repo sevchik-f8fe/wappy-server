@@ -1,3 +1,32 @@
+/**
+ * Схема создания нового пользователя
+ * 
+ * Поля:
+ * @property {string} email - Email пользователя (уникальный)
+ * @property {string} passwordHash - Хешированный пароль (bcrypt)
+ * @property {boolean} isActive - Активен ли аккаунт
+ * @property {string|null} refreshToken - Хеш refresh токена
+ * 
+ * Верификационные объекты:
+ * @property {Object} activation - Код активации при регистрации
+ * @property {Object} signInVerification - Код для входа (2FA)
+ * @property {Object} emailChange - Код для смены email
+ * 
+ * Каждый объект содержит:
+ * - code: 6-значный код
+ * - generatedAt: timestamp генерации (TTL 5 минут)
+ * 
+ * Данные пользователя:
+ * @property {Array} favorites - Избранные элементы
+ * @property {Array} historyLoad - История загрузок
+ * @property {number} createdAt - Timestamp регистрации
+ * @property {number} updatedAt - Timestamp последней активности
+ * 
+ * Хеширование:
+ * - Пароль хешируется с солью (10 раундов)
+ * - Refresh токен также хешируется перед сохранением
+ */
+
 import bcrypt from "bcrypt"
 
 export const createUser = async (email, pass) => {

@@ -1,3 +1,37 @@
+/**
+ * Контроллеры аутентификации пользователей
+ * 
+ * Регистрация:
+ * @function signUp - Создание нового пользователя
+ *   - Валидация email и пароля
+ *   - Проверка уникальности email
+ *   - Создание пользователя через createUser()
+ *   - Вызов next() для отправки email
+ * 
+ * Вход:
+ * @function signIn - Аутентификация пользователя
+ *   - Проверка существования email
+ *   - Сравнение пароля (bcrypt)
+ *   - Установка path = 'signInVerification'
+ *   - Вызов next() для 2FA кода
+ * 
+ * Middleware авторизации:
+ * @function checkAuthMiddleware - Проверка токенов
+ *   - Валидация access токена
+ *   - При ошибке: проверка refresh токена
+ *   - Сравнение хеша refresh токена
+ *   - Установка флага isRefresh при обновлении
+ * 
+ * @function updateTokensMiddleware - Обновление токенов
+ *   - Генерация новых access/refresh токенов
+ *   - Обновление refresh токена в БД
+ *   - Добавление токенов в ответ при isRefresh
+ * 
+ * Отличия от admin:
+ * - Поддержка 2FA (код подтверждения)
+ * - Сохранение истории и избранного
+ */
+
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import * as dotenv from 'dotenv';
@@ -6,6 +40,7 @@ dotenv.config({ path: '../.env' });
 
 import { createUser } from "../schemas/User.js";
 import { validateInput, findByEmail, addNewUser, updateUser } from "./util.js";
+import { logger } from "../logsControllers/logger.js";
 
 export const signUp = async (req, res, next) => {
     try {
@@ -152,6 +187,10 @@ export const updateTokensMiddleware = async (req, res, next) => {
 
         next();
     } catch (error) {
+        logger.error('Error processing data request', {
+            error: error.message,
+            stack: error.stack
+        });
         return res.status(500).json({ message: 'Ошибка авторизации. Проверьте введенные данные.' });
     }
 }

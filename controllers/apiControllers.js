@@ -1,4 +1,64 @@
+/**
+ * Контроллеры для интеграции с внешними API (Tenor, WHVN, SVG)
+ * 
+ * Общие утилиты:
+ * @function sanitizeString - Санитизация строк (удаление опасных символов, ограничение длины 100)
+ * @function validateNumber - Валидация чисел (диапазон 0-1000)
+ * @function validateApiConfig - Проверка наличия API ключей
+ * 
+ * Кэширование:
+ * @constant responseCache - Map для кэширования ответов
+ * @constant CACHE_TTL - Время жизни кэша (5 минут)
+ * @function getCachedResponse - Получение из кэша
+ * @function setCachedResponse - Сохранение в кэш
+ * 
+ * Tenor API (гифки):
+ * @function getTenorTrendings - Получение трендовых гифок
+ *   - Эндпоинт: https://g.tenor.com/v1/trending
+ *   - Пагинация через pos (next токен)
+ *   - Лимит: 15 результатов
+ * 
+ * @function getTenorSearch - Поиск гифок
+ *   - Эндпоинт: https://g.tenor.com/v1/search
+ *   - Пагинация: page * 20 (offset)
+ *   - Кэширование по запросу и странице
+ * 
+ * @function getTenorByID - Получение гифки по ID
+ *   - Эндпоинт: https://g.tenor.com/v1/gifs
+ *   - Возвращает один результат
+ * 
+ * SVG API (векторная графика):
+ * @function getSVG_search - Поиск SVG иконок
+ *   - Эндпоинт: https://api.svgl.app?search={query}
+ *   - Без пагинации
+ * 
+ * @function getSVG_code - Получение кода SVG
+ *   - Эндпоинт: https://api.svgl.app/svg/{name}
+ *   - Доп. защита: проверка на path traversal (.., /)
+ *   - Параметр no-optimize для получения исходного кода
+ * 
+ * WHVN API (фотографии):
+ * @function getPhoto_list - Получение списка фотографий
+ *   - Эндпоинт: https://wallhaven.cc/api/v1/search
+ *   - Пагинация по номеру страницы
+ * 
+ * @function getPhoto_search - Поиск фотографий
+ *   - Эндпоинт: https://wallhaven.cc/api/v1/search
+ *   - Параметры: q (query), page
+ * 
+ * Обработка ошибок:
+ * - Таймаут: 408 Request Timeout
+ * - Нет результатов: ERR_NOCK_NO_MATCH → пустой массив
+ * - Логирование через logger.error
+ * - Единый формат ошибок
+ * 
+ * Конфигурация Axios:
+ * - Таймаут: 10 секунд
+ * - User-Agent: WappyApp/1.0
+ */
+
 import axios from "axios";
+import { logger } from "../logsControllers/logger.js";
 
 const sanitizeString = (str) => {
     if (typeof str !== 'string') return '';
@@ -69,11 +129,14 @@ export const getTenorTrendings = async (req, res) => {
 
         res.status(200).json({ tenor: searchList.data });
     } catch (error) {
-        console.error('Tenor trending error:', error.message);
-
         if (error.code === 'ECONNABORTED') {
             return res.status(408).json({ error: 'Request timeout' });
         }
+
+        logger.error('Error processing data request', {
+            error: error.message,
+            stack: error.stack
+        });
 
         const statusCode = error.response?.status || 500;
         res.status(statusCode).json({
@@ -117,8 +180,6 @@ export const getTenorSearch = async (req, res) => {
 
         res.status(200).json({ tenor: searchList.data.results });
     } catch (error) {
-        console.error('Tenor search error:', error.message);
-
         if (error.code === 'ECONNABORTED') {
             return res.status(408).json({ error: 'Request timeout' });
         }
@@ -126,6 +187,11 @@ export const getTenorSearch = async (req, res) => {
         if (error.code == 'ERR_NOCK_NO_MATCH') {
             return res.status(200).json({ tenor: [] });
         }
+
+        logger.error('Error processing data request', {
+            error: error.message,
+            stack: error.stack
+        });
 
         const statusCode = error.response?.status || 500;
         res.status(statusCode).json({
@@ -168,8 +234,6 @@ export const getTenorByID = async (req, res) => {
 
         res.status(200).json({ tenor: gifData });
     } catch (error) {
-        console.log('Tenor GIF by ID error:', error);
-
         if (error.code === 'ECONNABORTED') {
             return res.status(408).json({ error: 'Request timeout' });
         }
@@ -177,6 +241,11 @@ export const getTenorByID = async (req, res) => {
         if (error.code == 'ERR_NOCK_NO_MATCH') {
             return res.status(200).json({ tenor: [] });
         }
+
+        logger.error('Error processing data request', {
+            error: error.message,
+            stack: error.stack
+        });
 
         const statusCode = error.response?.status || 500;
         res.status(statusCode).json({
@@ -217,6 +286,11 @@ export const getSVG_search = async (req, res) => {
         if (error.code == 'ERR_NOCK_NO_MATCH') {
             return res.status(200).json({ svg: [] });
         }
+
+        logger.error('Error processing data request', {
+            error: error.message,
+            stack: error.stack
+        });
 
         const statusCode = error.response?.status || 500;
         res.status(statusCode).json({
@@ -266,6 +340,11 @@ export const getSVG_code = async (req, res) => {
             return res.status(200).json({ svg: [] });
         }
 
+        logger.error('Error processing data request', {
+            error: error.message,
+            stack: error.stack
+        });
+
         const statusCode = error.response?.status || 500;
         res.status(statusCode).json({
             error: 'Unable to fetch SVG code'
@@ -294,11 +373,14 @@ export const getPhoto_list = async (req, res) => {
 
         res.status(200).json({ photo: searchList.data.data });
     } catch (error) {
-        console.error('Photo list error:', error.message);
-
         if (error.code === 'ECONNABORTED') {
             return res.status(408).json({ error: 'Request timeout' });
         }
+
+        logger.error('Error processing data request', {
+            error: error.message,
+            stack: error.stack
+        });
 
         const statusCode = error.response?.status || 500;
         res.status(statusCode).json({
@@ -326,11 +408,14 @@ export const getPhoto_search = async (req, res) => {
         setCachedResponse(cacheKey, searchList.data.data);
         res.status(200).json({ photo: searchList.data.data });
     } catch (error) {
-        console.error('Photo search error:', error.message);
-
         if (error.code === 'ECONNABORTED') {
             return res.status(408).json({ error: 'Request timeout' });
         }
+
+        logger.error('Error processing data request', {
+            error: error.message,
+            stack: error.stack
+        });
 
         const statusCode = error.response?.status || 500;
         res.status(statusCode).json({

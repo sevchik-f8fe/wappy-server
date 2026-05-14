@@ -1,8 +1,38 @@
+/**
+ * Контроллеры управления профилем пользователя
+ * 
+ * @function deleteAccount - Удаление аккаунта
+ *   - Поиск пользователя по email
+ *   - Удаление документа из БД (CouchDB)
+ *   - Безвозвратное удаление всех данных
+ *   - Возврат статуса операции
+ * 
+ * @function changeEmail - Смена email адреса
+ *   - Проверка кода подтверждения (emailChange.code)
+ *   - Валидация срока действия (5 минут)
+ *   - Обновление email пользователя
+ *   - Очистка emailChange объекта
+ *   - Поддержка refresh токенов
+ * 
+ * Процесс смены email:
+ * 1. Пользователь вводит новый email
+ * 2. Сервер отправляет код подтверждения
+ * 3. Пользователь вводит код
+ * 4. changeEmail проверяет код и обновляет email
+ * 
+ * Безопасность:
+ * - Требуется авторизация
+ * - Двойная валидация (код + срок действия)
+ * - Валидация email через validateInput
+ * - Очистка чувствительных данных после использования
+ */
+
 import * as dotenv from 'dotenv';
 
 dotenv.config({ path: '../.env' });
 
 import { validateInput, findByEmail, deleteUser, updateUser } from "./util.js";
+import { logger } from '../logsControllers/logger.js';
 
 export const deleteAccount = async (req, res) => {
     try {
@@ -26,7 +56,11 @@ export const deleteAccount = async (req, res) => {
 
         return res.status(200).json({ message: 'ok del' });
 
-    } catch (err) {
+    } catch (error) {
+        logger.error('Error processing data request', {
+            error: error.message,
+            stack: error.stack
+        });
         res.status(500).json({
             message: 'Ошибка.',
         });
@@ -84,7 +118,11 @@ export const changeEmail = async (req, res) => {
                 message: 'Ошибка.',
             });
         }
-    } catch (err) {
+    } catch (error) {
+        logger.error('Error processing data request', {
+            error: error.message,
+            stack: error.stack
+        });
         res.status(500).json({
             message: 'Ошибка.',
         });

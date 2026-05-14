@@ -1,3 +1,28 @@
+/**
+ * Отправка email через SMTP сервер Яндекса
+ * 
+ * Конфигурация:
+ * - Хост: smtp.yandex.ru
+ * - Порт: 465 (SSL/TLS)
+ * - Аутентификация: SMTP_USER и SMTP_KEY из .env
+ * 
+ * Шаблоны:
+ * - Использует Handlebars для рендеринга HTML
+ * - Шаблон: ./templates/mail.html
+ * - Переменная {{code}} заменяется на код подтверждения
+ * 
+ * Процесс:
+ * 1. Создание транспортера nodemailer
+ * 2. Чтение HTML шаблона из файла
+ * 3. Компиляция шаблона с Handlebars
+ * 4. Отправка письма
+ * 
+ * Параметры mailObj:
+ * @param {string} from - Email отправителя
+ * @param {string} to - Email получателя
+ * @param {Object} auth_code - Объект с полем code
+ */
+
 import nodemailer from "nodemailer";
 import path from "path";
 import handlebars from "handlebars";

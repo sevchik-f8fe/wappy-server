@@ -1,3 +1,36 @@
+/**
+ * Контроллер для истории загрузок
+ * 
+ * @function addToHistory - Добавление в историю
+ *   - Поиск пользователя по email
+ *   - Добавление элемента в начало массива historyLoad
+ *   - Формат элемента:
+ *     {
+ *       source: string,
+ *       data: object,
+ *       loadDate: timestamp (Date.now())
+ *     }
+ *   - Обновление updatedAt
+ *   - Возврат обновленного пользователя
+ * 
+ * Особенности:
+ * - Запись timestamp загрузки
+ * - Сохраняем полные данные элемента
+ * - Поддержка refresh токенов
+ * - При isRefresh: возвращает новый access токен
+ * 
+ * Использование:
+ * - Вызывается при скачивании медиа-файла
+ * - Отображается на странице истории
+ * - Используется для статистики и PDF отчета
+ * 
+ * Безопасность:
+ * - Требуется авторизация
+ * - Валидация входных данных
+ * - Проверка существования пользователя
+ */
+
+import { logger } from "../logsControllers/logger.js";
 import { findByEmail, updateUser } from "./util.js";
 
 export const addToHistory = async (req, res) => {
@@ -39,7 +72,11 @@ export const addToHistory = async (req, res) => {
         } else {
             return res.status(200).json({ user: safeUser });
         }
-    } catch (e) {
+    } catch (error) {
+        logger.error('Error processing data request', {
+            error: error.message,
+            stack: error.stack
+        });
         return res.status(500).json({ error: 'Ошибка' });
     }
 }

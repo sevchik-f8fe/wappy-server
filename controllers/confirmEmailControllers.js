@@ -1,7 +1,37 @@
+/**
+ * Контроллеры для подтверждения email и 2FA
+ * 
+ * @function sendMail - Отправка кода подтверждения
+ *   - Генерация 6-значного кода
+ *   - Сохранение кода в соответствующее поле пользователя:
+ *     • activation - для регистрации
+ *     • signInVerification - для входа
+ *     • emailChange - для смены email
+ *   - Отправка email через nodemailer
+ *   - TTL кода: 5 минут
+ * 
+ * @function confirmMail - Подтверждение кода
+ *   - Проверка существования и актуальности кода
+ *   - Валидация введенного кода
+ *   - При успехе:
+ *     • Для activation: активация аккаунта (isActive = true)
+ *     • Для signInVerification: генерация токенов
+ *     • Для emailChange: обновление email
+ *   - Очистка кода после использования
+ *   - Генерация access/refresh токенов
+ * 
+ * Безопасность:
+ * - Коды одноразовые (удаляются после использования)
+ * - Срок жизни кода 5 минут
+ * - Валидация входных данных
+ * - Хеширование refresh токена
+ */
+
 import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt"
 import { sendEmail } from "../mail/send-mail.js";
 import { generateCode, validateInput, findByEmail, updateUser } from "./util.js";
+import { logger } from "../logsControllers/logger.js";
 
 export const confirmMail = async (req, res) => {
     try {
@@ -16,7 +46,6 @@ export const confirmMail = async (req, res) => {
         const user = await findByEmail(email);
 
         if (!user[0] || !user[0][path]?.code || !user[0][path]?.generatedAt) {
-            console.log(user[0])
             return res.status(400).json({
                 message: 'Ошибка.',
             });
@@ -81,7 +110,11 @@ export const confirmMail = async (req, res) => {
             });
         }
 
-    } catch (e) {
+    } catch (error) {
+        logger.error('Error processing data request', {
+            error: error.message,
+            stack: error.stack
+        });
         res.status(500).json({
             message: 'Ошибка.',
         });
@@ -139,7 +172,12 @@ export const sendMail = async (req, res) => {
             }
         }
         await sendEmail(mailObj)
-            .catch((error) => console.error("err send:", error));
+            .catch((error) => {
+                logger.error('Error processing data request', {
+                    error: error.message,
+                    stack: error.stack
+                });
+            })
 
         const safeUser = {
             email: user[0].email,
@@ -150,7 +188,11 @@ export const sendMail = async (req, res) => {
         };
 
         res.status(200).json({ user: safeUser });
-    } catch (err) {
+    } catch (error) {
+        logger.error('Error processing data request', {
+            error: error.message,
+            stack: error.stack
+        });
         res.status(500).json({
             message: 'Ошибка.',
         });

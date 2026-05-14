@@ -1,3 +1,32 @@
+/**
+ * Контроллеры для управления избранным
+ * 
+ * @function addToFavorites - Добавление в избранное
+ *   - Поиск пользователя по email
+ *   - Добавление элемента в начало массива favorites
+ *   - Формат элемента: { source, data }
+ *   - Обновление updatedAt
+ *   - Возврат обновленного пользователя
+ * 
+ * @function removeFromFavorites - Удаление из избранного
+ *   - Фильтрация массива favorites
+ *   - Удаление по source и data.id
+ *   - Обновление updatedAt
+ *   - Возврат обновленного пользователя
+ * 
+ * Особенности:
+ * - Оптимистичное обновление (сначала обновляем локально)
+ * - Поддержка refresh токенов (isRefresh)
+ * - При isRefresh: возвращает новый access токен
+ * - Сохранение истории и других полей пользователя
+ * 
+ * Безопасность:
+ * - Требуется авторизация (checkAuthMiddleware)
+ * - Валидация email пользователя
+ * - Проверка существования пользователя
+ */
+
+import { logger } from "../logsControllers/logger.js";
 import { findByEmail, updateUser } from "./util.js";
 
 export const addToFavorites = async (req, res) => {
@@ -32,7 +61,11 @@ export const addToFavorites = async (req, res) => {
         } else {
             return res.status(200).json({ user: safeUser });
         }
-    } catch (e) {
+    } catch (error) {
+        logger.error('Error processing data request', {
+            error: error.message,
+            stack: error.stack
+        });
         return res.status(500).json({ error: 'Ошибка' });
     }
 }
@@ -72,7 +105,11 @@ export const removeFromFavorites = async (req, res) => {
         } else {
             return res.status(200).json({ user: safeUser });
         }
-    } catch (e) {
+    } catch (error) {
+        logger.error('Error processing data request', {
+            error: error.message,
+            stack: error.stack
+        });
         return res.status(500).json({ error: 'Ошибка' });
     }
 }

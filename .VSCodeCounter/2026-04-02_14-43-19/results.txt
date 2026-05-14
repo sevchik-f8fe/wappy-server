@@ -1,0 +1,55 @@
+Date : 2026-04-02 14:43:19
+Directory : c:\Users\TBG\Documents\wappy\server
+Total : 20 files,  7655 codes, 442 comments, 332 blanks, all 8429 lines
+
+Languages
++------------+------------+------------+------------+------------+------------+
+| language   | files      | code       | comment    | blank      | total      |
++------------+------------+------------+------------+------------+------------+
+| JSON       |          2 |      6,135 |          0 |          2 |      6,137 |
+| JavaScript |         15 |      1,410 |        417 |        318 |      2,145 |
+| HTML       |          1 |         96 |         25 |          8 |        129 |
+| Markdown   |          1 |          7 |          0 |          4 |         11 |
+| Docker     |          1 |          7 |          0 |          0 |          7 |
++------------+------------+------------+------------+------------+------------+
+
+Directories
++----------------------------------------------------------------------------+------------+------------+------------+------------+------------+
+| path                                                                       | files      | code       | comment    | blank      | total      |
++----------------------------------------------------------------------------+------------+------------+------------+------------+------------+
+| .                                                                          |         20 |      7,655 |        442 |        332 |      8,429 |
+| . (Files)                                                                  |          5 |      6,287 |         39 |         41 |      6,367 |
+| controllers                                                                |          8 |      1,106 |        271 |        244 |      1,621 |
+| logsControllers                                                            |          4 |        108 |         55 |         27 |        190 |
+| mail                                                                       |          2 |        126 |         49 |         16 |        191 |
+| mail (Files)                                                               |          1 |         30 |         24 |          8 |         62 |
+| mail\templates                                                             |          1 |         96 |         25 |          8 |        129 |
+| schemas                                                                    |          1 |         28 |         28 |          4 |         60 |
++----------------------------------------------------------------------------+------------+------------+------------+------------+------------+
+
+Files
++----------------------------------------------------------------------------+------------+------------+------------+------------+------------+
+| filename                                                                   | language   | code       | comment    | blank      | total      |
++----------------------------------------------------------------------------+------------+------------+------------+------------+------------+
+| c:\Users\TBG\Documents\wappy\server\Dockerfile                             | Docker     |          7 |          0 |          0 |          7 |
+| c:\Users\TBG\Documents\wappy\server\README.md                              | Markdown   |          7 |          0 |          4 |         11 |
+| c:\Users\TBG\Documents\wappy\server\controllers\adminControllers.js        | JavaScript |        163 |         32 |         40 |        235 |
+| c:\Users\TBG\Documents\wappy\server\controllers\apiControllers.js          | JavaScript |        293 |         58 |         84 |        435 |
+| c:\Users\TBG\Documents\wappy\server\controllers\authControllers.js         | JavaScript |        131 |         33 |         32 |        196 |
+| c:\Users\TBG\Documents\wappy\server\controllers\confirmEmailControllers.js | JavaScript |        147 |         28 |         21 |        196 |
+| c:\Users\TBG\Documents\wappy\server\controllers\favoriteControllers.js     | JavaScript |         72 |         27 |         16 |        115 |
+| c:\Users\TBG\Documents\wappy\server\controllers\histrotyLoadControllers.js | JavaScript |         43 |         31 |          8 |         82 |
+| c:\Users\TBG\Documents\wappy\server\controllers\profileControllers.js      | JavaScript |         84 |         28 |         19 |        131 |
+| c:\Users\TBG\Documents\wappy\server\controllers\util.js                    | JavaScript |        173 |         34 |         24 |        231 |
+| c:\Users\TBG\Documents\wappy\server\index.js                               | JavaScript |        138 |         39 |         35 |        212 |
+| c:\Users\TBG\Documents\wappy\server\logsControllers\logger.js              | JavaScript |         48 |         27 |         10 |         85 |
+| c:\Users\TBG\Documents\wappy\server\logsControllers\metrickRoute.js        | JavaScript |         12 |          0 |          3 |         15 |
+| c:\Users\TBG\Documents\wappy\server\logsControllers\metricks.js            | JavaScript |         33 |         28 |          9 |         70 |
+| c:\Users\TBG\Documents\wappy\server\logsControllers\metricksMiddleware.js  | JavaScript |         15 |          0 |          5 |         20 |
+| c:\Users\TBG\Documents\wappy\server\mail\send-mail.js                      | JavaScript |         30 |         24 |          8 |         62 |
+| c:\Users\TBG\Documents\wappy\server\mail\templates\mail.html               | HTML       |         96 |         25 |          8 |        129 |
+| c:\Users\TBG\Documents\wappy\server\package-lock.json                      | JSON       |      6,086 |          0 |          1 |      6,087 |
+| c:\Users\TBG\Documents\wappy\server\package.json                           | JSON       |         49 |          0 |          1 |         50 |
+| c:\Users\TBG\Documents\wappy\server\schemas\User.js                        | JavaScript |         28 |         28 |          4 |         60 |
+| Total                                                                      |            |      7,655 |        442 |        332 |      8,429 |
++----------------------------------------------------------------------------+------------+------------+------------+------------+------------+
